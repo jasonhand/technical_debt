@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Debt: The Hidden Cost of Speed</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem 2rem;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(147, 51, 234, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.6; transform: translateX(-50%) scale(1.1); }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #9333ea, #ec4899, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: #94a3b8;
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .control-panel {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .visualization {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            position: relative;
+            min-height: 400px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #f1f5f9;
+        }
+
+        .metric-group {
+            margin-bottom: 2rem;
+        }
+
+        .metric-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .speed { color: #10b981; }
+        .cost { color: #f59e0b; }
+        .safety { color: #3b82f6; }
+        .debt { color: #ef4444; }
+
+        .slider-container {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(148, 163, 184, 0.2);
+            outline: none;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #9333ea, #ec4899);
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(147, 51, 234, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 20px rgba(147, 51, 234, 0.6);
+        }
+
+        .debt-meter {
+            width: 100%;
+            height: 20px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .debt-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .triangle-viz {
+            width: 400px;
+            height: 400px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .triangle-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .triangle-emoji {
+            position: absolute;
+            font-size: 96px;
+            transform: translate(-50%, -50%);
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+            z-index: 10;
+        }
+
+        .speed-emoji {
+            top: 5%;
+            left: 50%;
+        }
+
+        .cost-emoji {
+            top: 60%;
+            left: calc(5% + 10px);
+        }
+
+        .safety-emoji {
+            top: 60%;
+            right: calc(5% - 10px);
+        }
+
+        .balance-point {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #9333ea, #ec4899);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.5s ease;
+            box-shadow: 0 0 20px rgba(147, 51, 234, 0.6);
+            z-index: 15;
+        }
+
+
+
+        .scenario-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .scenario-btn {
+            padding: 1rem 1.5rem;
+            background: rgba(148, 163, 184, 0.1);
+            border: 2px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            color: #f1f5f9;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .scenario-btn:hover {
+            background: rgba(147, 51, 234, 0.2);
+            border-color: rgba(147, 51, 234, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .explanation {
+            max-width: 800px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+            text-align: center;
+        }
+
+        .explanation h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #f1f5f9;
+        }
+
+        .explanation p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+        }
+
+        .warning-indicator {
+            padding: 1rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            margin-top: 1rem;
+            animation: warning-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes warning-pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .metric-impact {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        .additional-factors {
+            max-width: 1200px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+        }
+
+        .additional-factors h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: #f1f5f9;
+        }
+
+        .factors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .factor-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .factor-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #f1f5f9;
+        }
+
+        .factor-card p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        .factors-note {
+            text-align: center;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #94a3b8;
+            background: rgba(30, 41, 59, 0.2);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .triangle-viz {
+                width: 250px;
+                height: 250px;
+            }
+
+            .factors-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .additional-factors h2 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>Technical Debt</h1>
+        <div class="explanation">
+            <p>
+                Technical debt is like financial debt - it allows you to go faster in the short term, 
+                but creates interest payments that slow you down over time. When you prioritize one 
+                aspect (speed, cost, or safety) too heavily, you create imbalances that manifest as technical debt.
+            </p>
+            <p>
+                <strong>The key insight:</strong> There's no such thing as a free lunch in software development. 
+                Every shortcut has a cost, and that cost compounds over time if not addressed.
+            </p>
+        </div>
+    </div>
+    
+    <div class="dashboard">
+        <div class="control-panel">
+            <h2 class="section-title">Development Focus</h2>
+            
+            <div class="metric-group">
+                <div class="metric-label">
+                    <span class="speed">⚡ Speed Priority</span>
+                    <span class="metric-value speed" id="speedValue">50</span>
+                </div>
+                <div class="slider-container">
+                    <input type="range" min="0" max="100" value="50" class="slider" id="speedSlider">
+                </div>
+                <div class="metric-impact" id="speedImpact">Balanced approach to delivery</div>
+            </div>
+
+            <div class="metric-group">
+                <div class="metric-label">
+                    <span class="cost">💰 Cost Optimization</span>
+                    <span class="metric-value cost" id="costValue">50</span>
+                </div>
+                <div class="slider-container">
+                    <input type="range" min="0" max="100" value="50" class="slider" id="costSlider">
+                </div>
+                <div class="metric-impact" id="costImpact">Moderate resource usage</div>
+            </div>
+
+            <div class="metric-group">
+                <div class="metric-label">
+                    <span class="safety">🛡️ Safety & Quality</span>
+                    <span class="metric-value safety" id="safetyValue">50</span>
+                </div>
+                <div class="slider-container">
+                    <input type="range" min="0" max="100" value="50" class="slider" id="safetySlider">
+                </div>
+                <div class="metric-impact" id="safetyImpact">Standard quality practices</div>
+            </div>
+
+            <div class="metric-group">
+                <div class="metric-label">
+                    <span class="debt">⚠️ Technical Debt</span>
+                    <span class="metric-value debt" id="debtValue">0%</span>
+                </div>
+                <div class="debt-meter">
+                    <div class="debt-fill" id="debtFill"></div>
+                </div>
+                <div class="metric-impact" id="debtImpact">Low technical debt</div>
+            </div>
+
+
+
+            <div class="scenario-buttons">
+                <button class="scenario-btn" onclick="setScenario('startup')">🚀 Startup Rush</button>
+                <button class="scenario-btn" onclick="setScenario('enterprise')">🏢 Enterprise Safe</button>
+                <button class="scenario-btn" onclick="setScenario('bootstrap')">💸 Bootstrap Budget</button>
+                <button class="scenario-btn" onclick="setScenario('balanced')">⚖️ Balanced</button>
+            </div>
+        </div>
+
+        <div class="visualization">
+            <h2 class="section-title">System Balance Triangle</h2>
+            <div class="triangle-viz">
+                <svg class="triangle-svg" viewBox="0 0 400 400">
+                    <!-- Triangle outline -->
+                    <polygon points="200,50 100,300 300,300" 
+                             fill="none" 
+                             stroke="rgba(148, 163, 184, 0.4)" 
+                             stroke-width="2"/>
+                </svg>
+                
+                <!-- Emojis positioned outside triangle -->
+                <div class="triangle-emoji speed-emoji">⚡</div>
+                <div class="triangle-emoji cost-emoji">💰</div>
+                <div class="triangle-emoji safety-emoji">🛡️</div>
+                
+                <div class="balance-point" id="balancePoint"></div>
+            </div>
+            <div id="warningIndicator" class="warning-indicator" style="display: none;">
+                <strong>⚠️ High Technical Debt Warning!</strong>
+                <p id="warningText">Your system is accumulating significant technical debt.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="additional-factors">
+        <h2>Additional Technical Debt Factors</h2>
+        <div class="factors-grid">
+            <div class="factor-card">
+                <h3>🔧 Maintainability</h3>
+                <p>
+                    This involves how easily code can be modified, updated, and extended over time. 
+                    Poor maintainability creates increasing complexity and slower development cycles. 
+                    When code becomes difficult to understand or change, every future modification 
+                    takes longer and introduces more risk.
+                </p>
+            </div>
+            <div class="factor-card">
+                <h3>📈 Scalability</h3>
+                <p>
+                    The ability of a system to handle increased load or growth. Neglecting scalability 
+                    considerations during design can lead to architectural debt that becomes increasingly 
+                    difficult to address later. What works for 100 users may completely break down at 10,000 users.
+                </p>
+            </div>
+        </div>
+        <p class="factors-note">
+            <strong>Remember:</strong> While the triangle above focuses on the primary trade-offs during development, 
+            maintainability and scalability are equally important long-term considerations that compound 
+            technical debt when ignored.
+        </p>
+    </div>
+
+    
+
+    <script>
+        const speedSlider = document.getElementById('speedSlider');
+        const costSlider = document.getElementById('costSlider');
+        const safetySlider = document.getElementById('safetySlider');
+        
+        const speedValue = document.getElementById('speedValue');
+        const costValue = document.getElementById('costValue');
+        const safetyValue = document.getElementById('safetyValue');
+        const debtValue = document.getElementById('debtValue');
+        
+        const speedImpact = document.getElementById('speedImpact');
+        const costImpact = document.getElementById('costImpact');
+        const safetyImpact = document.getElementById('safetyImpact');
+        const debtImpact = document.getElementById('debtImpact');
+        
+        const debtFill = document.getElementById('debtFill');
+        const balancePoint = document.getElementById('balancePoint');
+        const warningIndicator = document.getElementById('warningIndicator');
+        const warningText = document.getElementById('warningText');
+
+        function updateVisualization() {
+            const speed = parseInt(speedSlider.value);
+            const cost = parseInt(costSlider.value);
+            const safety = parseInt(safetySlider.value);
+            
+            // Update displayed values
+            speedValue.textContent = speed;
+            costValue.textContent = cost;
+            safetyValue.textContent = safety;
+            
+            // Calculate technical debt
+            const balance = Math.abs(speed - 50) + Math.abs(cost - 50) + Math.abs(safety - 50);
+            const extremeBonus = Math.max(0, Math.max(speed, cost, safety) - 80) * 2;
+            const lowSafetyPenalty = safety < 30 ? (30 - safety) * 2 : 0;
+            const debt = Math.min(100, balance * 0.8 + extremeBonus + lowSafetyPenalty);
+            
+            debtValue.textContent = Math.round(debt) + '%';
+            debtFill.style.width = debt + '%';
+            
+            // Update balance point position within SVG triangle
+            // Triangle vertices: top(200,50), bottom-left(100,300), bottom-right(300,300)
+            const topVertex = {x: 200, y: 50};
+            const leftVertex = {x: 100, y: 300};
+            const rightVertex = {x: 300, y: 300};
+            
+            // Convert slider values to weights (0-1)
+            const speedWeight = speed / 100;
+            const costWeight = cost / 100;
+            const safetyWeight = safety / 100;
+            
+            // Calculate weighted position using barycentric coordinates
+            const totalWeight = speedWeight + costWeight + safetyWeight;
+            const normalizedSpeed = speedWeight / totalWeight;
+            const normalizedCost = costWeight / totalWeight;
+            const normalizedSafety = safetyWeight / totalWeight;
+            
+            const x = (normalizedSpeed * topVertex.x) + 
+                     (normalizedCost * leftVertex.x) + 
+                     (normalizedSafety * rightVertex.x);
+            const y = (normalizedSpeed * topVertex.y) + 
+                     (normalizedCost * leftVertex.y) + 
+                     (normalizedSafety * rightVertex.y);
+            
+            balancePoint.style.left = x + 'px';
+            balancePoint.style.top = y + 'px';
+            
+            // Update impact descriptions
+            updateImpactDescriptions(speed, cost, safety, debt);
+            
+            // Show warning if debt is high
+            if (debt > 60) {
+                warningIndicator.style.display = 'block';
+                updateWarningText(speed, cost, safety, debt);
+            } else {
+                warningIndicator.style.display = 'none';
+            }
+        }
+
+        function updateImpactDescriptions(speed, cost, safety, debt) {
+            // Speed impact
+            if (speed > 80) {
+                speedImpact.textContent = "⚡ Rapid delivery, shortcuts taken";
+            } else if (speed < 20) {
+                speedImpact.textContent = "🐌 Slow delivery, thorough approach";
+            } else {
+                speedImpact.textContent = "⚖️ Balanced delivery pace";
+            }
+            
+            // Cost impact
+            if (cost > 80) {
+                costImpact.textContent = "💸 Minimal resources, cut corners";
+            } else if (cost < 20) {
+                costImpact.textContent = "💰 High investment, premium tools";
+            } else {
+                costImpact.textContent = "💼 Moderate resource allocation";
+            }
+            
+            // Safety impact
+            if (safety > 80) {
+                safetyImpact.textContent = "🛡️ Extensive testing, robust design";
+            } else if (safety < 20) {
+                safetyImpact.textContent = "⚠️ Minimal testing, risky shortcuts";
+            } else {
+                safetyImpact.textContent = "🔍 Standard quality practices";
+            }
+            
+            // Debt impact
+            if (debt > 80) {
+                debtImpact.textContent = "🔥 Critical: System becoming unmaintainable";
+            } else if (debt > 60) {
+                debtImpact.textContent = "⚠️ High: Significant slowdown ahead";
+            } else if (debt > 30) {
+                debtImpact.textContent = "📈 Moderate: Some future costs";
+            } else {
+                debtImpact.textContent = "✅ Low: Sustainable development";
+            }
+        }
+
+        function updateWarningText(speed, cost, safety, debt) {
+            let warnings = [];
+            
+            if (speed > 80 && safety < 40) {
+                warnings.push("High speed with low safety creates unstable code");
+            }
+            if (cost > 80 && safety < 40) {
+                warnings.push("Cost cutting on quality will create maintenance nightmares");
+            }
+            if (speed > 80 && cost > 80) {
+                warnings.push("Rushing with no resources leads to architectural disasters");
+            }
+            if (safety < 20) {
+                warnings.push("Ignoring quality creates exponential future costs");
+            }
+            
+            if (warnings.length > 0) {
+                warningText.textContent = warnings[0];
+            } else {
+                warningText.textContent = "Extreme imbalances are creating significant technical debt.";
+            }
+        }
+
+        function setScenario(scenario) {
+            switch(scenario) {
+                case 'startup':
+                    speedSlider.value = 90;
+                    costSlider.value = 85;
+                    safetySlider.value = 25;
+                    break;
+                case 'enterprise':
+                    speedSlider.value = 30;
+                    costSlider.value = 40;
+                    safetySlider.value = 90;
+                    break;
+                case 'bootstrap':
+                    speedSlider.value = 60;
+                    costSlider.value = 95;
+                    safetySlider.value = 35;
+                    break;
+                case 'balanced':
+                    speedSlider.value = 50;
+                    costSlider.value = 50;
+                    safetySlider.value = 50;
+                    break;
+            }
+            updateVisualization();
+        }
+
+        // Event listeners
+        speedSlider.addEventListener('input', updateVisualization);
+        costSlider.addEventListener('input', updateVisualization);
+        safetySlider.addEventListener('input', updateVisualization);
+
+        // Initialize
+        updateVisualization();
+    </script>
+</body>
+</html>
